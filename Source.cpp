@@ -84,9 +84,13 @@ int showTitleScreen(sf::RenderWindow& window) {
     mode2.setFillColor(sf::Color::White);
     mode2.setPosition(300, 300);
 
+    sf::Text mode3("3. Challenge Mode", font, 30);
+    mode3.setFillColor(sf::Color::White);
+    mode3.setPosition(300, 350);
+
     sf::Text exit("Press 'Q' to Quit", font, 24);
     exit.setFillColor(sf::Color::White);
-    exit.setPosition(300, 350);
+    exit.setPosition(300, 400);
 
     // Display the title screen
     while (window.isOpen()) {
@@ -101,6 +105,9 @@ int showTitleScreen(sf::RenderWindow& window) {
                 else if (event.text.unicode == '2') {
                     return 2; // Timed Mode selected
                 }
+                else if (event.text.unicode == '3') {
+                    return 3; // Challenge Mode selected
+                }
                 else if (event.text.unicode == 'Q' || event.text.unicode == 'q') {
                     window.close(); // Quit the game
                 }
@@ -113,6 +120,7 @@ int showTitleScreen(sf::RenderWindow& window) {
         window.draw(title); // Draw title text
         window.draw(mode1); // Draw mode 1 text
         window.draw(mode2); // Draw mode 2 text
+        window.draw(mode3); // Draw mode 3 text
         window.draw(exit);  // Draw ext text
         window.display();   // Display everything
     }
@@ -229,6 +237,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         else if (gameMode == 2) {
             fullNameText.setString(it->first);  // Display the acronym in the new mode
         }
+        else if (gameMode == 3) {
+            fullNameText.setString(it->second); // Update full name for the challenge mode
+        }
 
         // Main game loop
         sf::Clock clock; // Create a clock to track time
@@ -312,14 +323,53 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
                                 currentAcronym = it->first;
                                 fullNameText.setString(it->first); // Update full name for the new acronym
                             }
+                        
                             else if (userInput == "Q") {
                                 std::cout << "Quitting the game.\n";
                                 window.close();
                             }
+
                             else {
                                 // Missed attempt; display a missed message
                                 feedbackText.setString("Incorrect! Try again.");
                                 score -= 100; // Deduct 100 points
+                                spaceshipSprite.move(0, 45); // Move down 45 pixels
+                            }
+                        }
+
+                        if (gameMode == 3) {
+                            // Check if the input matches any acronym
+                            if (acronyms.find(userInput) != acronyms.end()) {
+                                // If a hit, display full name and increment score
+                                feedbackText.setString("Hit!");
+                                score += 100; // Increment score by 100
+                                timer += 5; // Add 5 seconds to the timer
+
+                                // Set random spaceship position after a hit
+                                spaceshipSprite.setPosition(rand() % (window.getSize().x - static_cast<int>(spaceshipSprite.getGlobalBounds().width)), 0); // Random position
+
+                                // Select a random spaceship texture
+                                int randomTextureIndex = rand() % spaceshipTextures.size();
+                                spaceshipSprite.setTexture(spaceshipTextures[randomTextureIndex]); // Set the new texture for the spaceship
+
+                                // Select a new random acronym for next round
+                                randomIndex = rand() % acronyms.size();
+                                it = acronyms.begin();
+                                std::advance(it, randomIndex);
+                                currentAcronym = it->first;
+                                fullNameText.setString(it->second); // Update full name for the new acronym
+                            }
+
+                            else if (userInput == "Q") {
+                                std::cout << "Quitting the game.\n";
+                                window.close();
+                            }
+
+                            else {
+                                // Missed attempt; display a missed message
+                                feedbackText.setString("Missed!");
+                                score -= 100; // Deduct 100 points
+                                // Move the spaceship down slightly
                                 spaceshipSprite.move(0, 45); // Move down 45 pixels
                             }
                         }
@@ -345,7 +395,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
             // Update spaceship position to fall at 1 pixel per second for gameMode 1 only
             if (gameMode == 1) {
                 if (spaceshipClock.getElapsedTime().asSeconds() >= 1.0f / 60.0f) { // Check if enough time has passed for movement
-                    spaceshipSprite.move(0, 0.75); // Move down by 1 pixels
+                    spaceshipSprite.move(0, 0.75); // Move down by 0.75 pixels
+                    spaceshipClock.restart(); // Reset the spaceship clock
+                }
+            }
+
+            if (gameMode == 3) {
+                if (spaceshipClock.getElapsedTime().asSeconds() >= 1.0f / 60.0f) { // Check if enough time has passed for movement
+                    spaceshipSprite.move(0, 1.75); // Move down by 1.75 pixels
                     spaceshipClock.restart(); // Reset the spaceship clock
                 }
             }
